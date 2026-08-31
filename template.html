@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026丙午年上证指数行情预测工作台</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background:#0f1419; color:#e0e0e0; }
+.header { background:linear-gradient(135deg,#1a2332,#0f1419); padding:20px 30px; border-bottom:1px solid #2a3441; display:flex; justify-content:space-between; align-items:center; }
+.header h1 { font-size:20px; color:#fff; }
+.header .subtitle { font-size:12px; color:#8899aa; margin-top:4px; }
+.header .update-info { font-size:12px; color:#667788; text-align:right; }
+.container { padding:20px 30px; }
+.layer-section { background:#1a2332; border-radius:8px; padding:20px; margin-bottom:16px; border:1px solid #2a3441; }
+.layer-section h2 { font-size:15px; color:#fff; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.layer-section h2 .tag { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:normal; }
+.tag-history { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.tag-forecast { background:rgba(59,130,246,0.15); color:#3b82f6; }
+.layer-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+.layer-card { background:#0f1419; border-radius:6px; padding:12px; border:1px solid #232d3d; }
+.layer-card .month-name { font-size:12px; color:#aabbcc; margin-bottom:4px; }
+.layer-card .pillar { font-family:"Courier New",monospace; font-size:13px; font-weight:600; color:#fff; margin-bottom:6px; }
+.layer-card .dj-val { font-size:18px; font-weight:700; margin-bottom:4px; }
+.layer-card .dj-val.up { color:#ef4444; }
+.layer-card .dj-val.down { color:#22c55e; }
+.layer-card .mz-trend-tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; margin-bottom:4px; }
+.layer-card .mz-detail { font-size:11px; color:#8899aa; line-height:1.5; }
+.trend-bull { background:rgba(239,68,68,0.15); color:#ef4444; }
+.trend-bear { background:rgba(34,197,94,0.15); color:#22c55e; }
+.trend-neutral { background:rgba(136,153,170,0.15); color:#8899aa; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+.stat-card { background:#1a2332; border-radius:8px; padding:14px 16px; border:1px solid #2a3441; }
+.stat-card .label { font-size:11px; color:#8899aa; margin-bottom:6px; }
+.stat-card .value { font-size:22px; font-weight:600; }
+.stat-card .value.up { color:#ef4444; }
+.stat-card .value.down { color:#22c55e; }
+.stat-card .value.neutral { color:#e0e0e0; }
+.stat-card .sub { font-size:11px; color:#667788; margin-top:4px; }
+.stat-card.forecast { border-color:#3b82f6; background:linear-gradient(135deg,rgba(59,130,246,0.08),#1a2332); }
+.chart-section { background:#1a2332; border-radius:8px; padding:20px; margin-bottom:16px; border:1px solid #2a3441; }
+.chart-section h2 { font-size:15px; color:#fff; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.chart-wrap { position:relative; height:300px; }
+.tabs { display:flex; gap:4px; margin-bottom:14px; }
+.tab { padding:8px 16px; background:#0f1419; border:1px solid #2a3441; border-radius:6px; cursor:pointer; font-size:13px; color:#8899aa; transition:all .2s; }
+.tab.active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+.comparison-section { background:#1a2332; border-radius:8px; padding:20px; margin-bottom:16px; border:1px solid #2a3441; }
+.comparison-section h2 { font-size:15px; color:#fff; margin-bottom:14px; }
+.comp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+.comp-card { background:#0f1419; border-radius:6px; padding:12px; border:1px solid #232d3d; }
+.comp-card .trend-name { font-size:13px; font-weight:600; color:#fff; margin-bottom:6px; }
+.comp-card .trend-meta { font-size:11px; color:#8899aa; margin-bottom:6px; }
+.comp-card .bar-wrap { display:flex; align-items:center; gap:8px; }
+.comp-card .bar { height:6px; border-radius:3px; background:#2a3441; flex:1; overflow:hidden; }
+.table-section { background:#1a2332; border-radius:8px; padding:20px; border:1px solid #2a3441; }
+.table-section h2 { font-size:15px; color:#fff; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.filters { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+.filters input, .filters select { background:#0f1419; border:1px solid #2a3441; border-radius:6px; padding:8px 12px; color:#e0e0e0; font-size:13px; outline:none; }
+.filters input:focus, .filters select:focus { border-color:#3b82f6; }
+.filters .count { font-size:12px; color:#667788; margin-left:auto; }
+.filters .badge { font-size:11px; padding:3px 10px; border-radius:10px; }
+.badge-actual { background:rgba(34,197,94,0.15); color:#22c55e; }
+.badge-forecast { background:rgba(59,130,246,0.15); color:#3b82f6; }
+.table-wrap { overflow-x:auto; max-height:650px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead th { position:sticky; top:0; background:#232d3d; padding:10px 8px; text-align:left; color:#aabbcc; font-weight:500; border-bottom:2px solid #3b82f6; white-space:nowrap; cursor:pointer; user-select:none; z-index:10; }
+thead th:hover { background:#2a3648; }
+tbody td { padding:8px; border-bottom:1px solid #232d3d; white-space:nowrap; }
+tbody tr:hover { background:#1e2838; }
+tbody tr:nth-child(even) { background:#171f2b; }
+tbody tr:nth-child(even):hover { background:#1e2838; }
+tbody tr.forecast-row { background:rgba(59,130,246,0.05); }
+tbody tr.forecast-row:nth-child(even) { background:rgba(59,130,246,0.08); }
+tbody tr.forecast-row td { color:#8899bb; }
+.chg-up { color:#ef4444; font-weight:500; }
+.chg-down { color:#22c55e; font-weight:500; }
+.chg-flat { color:#888; }
+.pillar { font-family:"Courier New",monospace; background:#0f1419; padding:2px 6px; border-radius:4px; font-size:11px; }
+.detail { color:#8899aa; font-size:11px; max-width:180px; overflow:hidden; text-overflow:ellipsis; }
+.forecast-mark { font-size:10px; color:#3b82f6; background:rgba(59,130,246,0.15); padding:1px 6px; border-radius:8px; margin-left:4px; }
+.note { background:#1a2332; border-left:3px solid #f59e0b; padding:12px 16px; border-radius:0 6px 6px 0; margin-bottom:16px; font-size:12px; color:#aabbcc; line-height:1.8; }
+.note strong { color:#f59e0b; }
+::-webkit-scrollbar { width:8px; height:8px; }
+::-webkit-scrollbar-track { background:#0f1419; }
+::-webkit-scrollbar-thumb { background:#2a3441; border-radius:4px; }
+::-webkit-scrollbar-thumb:hover { background:#3a4658; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>2026丙午年上证指数行情预测工作台</h1>
+    <div class="subtitle">实际行情 · 历史参照(1966丙午) · 走势预测 · 每日干支对照</div>
+  </div>
+  <div class="update-info">
+    实际行情：<span id="actualRange"></span><br>
+    预测覆盖：全年<span id="totalDays"></span>个交易日
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="note">
+    <strong>数据说明：</strong>本工作台分三层数据——①<strong>历史参照层</strong>：1966丙午年道琼斯指数逐月涨跌（同为丙午年，干支月柱完全相同，作为历史参照）；②<strong>今年预测层</strong>：2026丙午年各月走势预测；③<strong>每日明细层</strong>：有实际行情的日期显示真实数据，未来日期显示预测数据（标注"预测"）。本页面通过GitHub Actions每日自动更新，数据仅供参考，不构成投资建议。
+  </div>
+
+  <div class="layer-section">
+    <h2>第一层 · 历史参照涨跌 <span class="tag tag-history">1966丙午年 · 道琼斯指数</span></h2>
+    <div class="layer-grid" id="dj1966Grid"></div>
+  </div>
+
+  <div class="layer-section">
+    <h2>第二层 · 今年每月预测 <span class="tag tag-forecast">2026丙午年 · 走势预测</span></h2>
+    <div class="layer-grid" id="forecastGrid"></div>
+  </div>
+
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <div class="chart-section">
+    <h2>实际行情走势</h2>
+    <div class="tabs">
+      <div class="tab active" onclick="switchChart('close')">收盘价走势</div>
+      <div class="tab" onclick="switchChart('chg')">每日涨跌幅</div>
+      <div class="tab" onclick="switchChart('volume')">成交量</div>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+
+  <div class="comparison-section">
+    <h2>预测走势与实际涨跌对照（基于实际行情）</h2>
+    <div id="compGrid" class="comp-grid"></div>
+  </div>
+
+  <div class="table-section">
+    <h2>第三层 · 每日明细数据</h2>
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="搜索日期 / 干支 / 走势..." oninput="filterTable()">
+      <select id="trendFilter" onchange="filterTable()">
+        <option value="">全部走势</option>
+      </select>
+      <select id="chgFilter" onchange="filterTable()">
+        <option value="">全部数据</option>
+        <option value="actual">仅实际行情</option>
+        <option value="forecast">仅预测数据</option>
+        <option value="up">仅上涨</option>
+        <option value="down">仅下跌</option>
+      </select>
+      <span class="badge badge-actual" id="actualBadge"></span>
+      <span class="badge badge-forecast" id="forecastBadge"></span>
+      <span class="count" id="rowCount"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">日期 ↕</th>
+            <th onclick="sortTable(1)">星期 ↕</th>
+            <th onclick="sortTable(2)">月柱 ↕</th>
+            <th onclick="sortTable(3)">日干支 ↕</th>
+            <th onclick="sortTable(4)">开盘价 ↕</th>
+            <th onclick="sortTable(5)">收盘价 ↕</th>
+            <th onclick="sortTable(6)">收盘涨跌幅 ↕</th>
+            <th onclick="sortTable(7)">日内涨跌幅 ↕</th>
+            <th onclick="sortTable(8)">振幅 ↕</th>
+            <th onclick="sortTable(9)">干支组合 ↕</th>
+            <th onclick="sortTable(10)">走势 ↕</th>
+            <th onclick="sortTable(11)">上涨概率 ↕</th>
+            <th>预测</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DATA = /*DATA_JSON*/;
+const STATS = /*STATS_JSON*/;
+const FORECAST = /*FORECAST_JSON*/;
+const DJ1966 = /*DJ1966_JSON*/;
+const DJ1966_LAYUE = /*DJ1966_LAYUE_JSON*/;
+const TREND_UPRATE = /*UPRATE_JSON*/;
+
+let currentChart = 'close';
+let chart = null;
+let sortCol = -1;
+let sortAsc = true;
+
+function getTrendClass(trend) {
+  const bull = ['暴涨','普涨','缓涨','涨势如潮','疯狂上涨','继续暴涨','稳步上涨','大涨','暴力拉升','个股普涨','政策救市','救市','政策出手','指数拉升','见底企稳','暴涨企稳','终结熊市'];
+  const bear = ['暴跌','普跌','缓跌','崩盘','连续暴跌','高位雪崩','上攻受制','指数跌','指数徘徊'];
+  if (bull.includes(trend)) return 'trend-bull';
+  if (bear.includes(trend)) return 'trend-bear';
+  return 'trend-neutral';
+}
+
+function renderDJ1966() {
+  const grid = document.getElementById('dj1966Grid');
+  let html = `<div class="layer-card">
+    <div class="month-name">${DJ1966_LAYUE[0]}·1月</div>
+    <div class="pillar">${DJ1966_LAYUE[1]}</div>
+    <div class="dj-val ${DJ1966_LAYUE[2]>=0?'up':'down'}">${DJ1966_LAYUE[2]>=0?'+':''}${DJ1966_LAYUE[2]}%</div>
+    <div class="mz-detail">1966年1月(乙巳年己丑月)</div>
+  </div>`;
+  html += DJ1966.map(d => `<div class="layer-card">
+    <div class="month-name">${d[0]}</div>
+    <div class="pillar">${d[1]}</div>
+    <div class="dj-val ${d[2]>=0?'up':'down'}">${d[2]>=0?'+':''}${d[2]}%</div>
+    <div class="mz-detail">道琼斯月度涨跌幅</div>
+  </div>`).join('');
+  grid.innerHTML = html;
+}
+
+function renderForecast() {
+  const grid = document.getElementById('forecastGrid');
+  grid.innerHTML = FORECAST.map(f => {
+    const cls = getTrendClass(f.trend);
+    const hasActual = f.actual_chg !== null && f.actual_chg !== undefined;
+    const actualCls = hasActual ? (f.actual_chg >= 0 ? 'up' : 'down') : '';
+    const actualText = hasActual ? (f.actual_chg >= 0 ? '+' : '') + f.actual_chg + '%' : '待更新';
+    return `<div class="layer-card">
+      <div class="month-name">${f.month} · ${f.period}</div>
+      <div class="pillar">${f.pillar}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="mz-trend-tag ${cls}">${f.trend}</span>
+        <span class="dj-val ${actualCls}" style="font-size:16px;margin:0">${actualText}</span>
+      </div>
+      <div class="mz-detail" style="margin-top:4px">${f.tg_shs}·${f.dz_shs}·${f.combo}</div>
+      <div class="mz-detail">${f.detail}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderStats() {
+  const periodCls = STATS.period_chg >= 0 ? 'up' : 'down';
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="label">区间涨跌幅</div><div class="value ${periodCls}">${STATS.period_chg>=0?'+':''}${STATS.period_chg}%</div><div class="sub">${STATS.start_close.toFixed(0)} → ${STATS.end_close.toFixed(0)}</div></div>
+    <div class="stat-card"><div class="label">上涨天数</div><div class="value up">${STATS.up}</div><div class="sub">占比 ${(STATS.up/STATS.total*100).toFixed(1)}%</div></div>
+    <div class="stat-card"><div class="label">下跌天数</div><div class="value down">${STATS.down}</div><div class="sub">占比 ${(STATS.down/STATS.total*100).toFixed(1)}%</div></div>
+    <div class="stat-card"><div class="label">最大单日涨幅</div><div class="value up">+${STATS.max_up_val}%</div><div class="sub">${STATS.max_up_date}</div></div>
+    <div class="stat-card"><div class="label">最大单日跌幅</div><div class="value down">${STATS.max_down_val}%</div><div class="sub">${STATS.max_down_date}</div></div>
+    <div class="stat-card forecast"><div class="label">预测覆盖天数</div><div class="value neutral">${STATS.forecast_count}</div><div class="sub">自 ${STATS.forecast_start} 起</div></div>
+  `;
+  document.getElementById('actualRange').textContent = STATS.start_date + ' ~ ' + STATS.end_date;
+  document.getElementById('totalDays').textContent = DATA.length;
+  document.getElementById('actualBadge').textContent = '实际 ' + STATS.total + '天';
+  document.getElementById('forecastBadge').textContent = '预测 ' + STATS.forecast_count + '天';
+}
+
+function initChart() {
+  const actual = DATA.filter(d => d.has_actual);
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  const labels = actual.map(d => d.date.slice(5));
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '收盘价', data: actual.map(d => d.close),
+        borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)',
+        fill: true, tension: 0.1, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#aabbcc' } },
+        tooltip: {
+          backgroundColor: '#1a2332', titleColor: '#fff', bodyColor: '#ccc',
+          borderColor: '#3b82f6', borderWidth: 1,
+          callbacks: {
+            afterBody: function(items) {
+              const idx = items[0].dataIndex;
+              const d = actual[idx];
+              return ['日干支: '+d.day_pillar, '月柱: '+d.month_pillar, '走势: '+d.mz_trend, '预测: '+d.mz_detail];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#667788', maxTicksLimit: 20 }, grid: { color: '#1a2332' } },
+        y: { ticks: { color: '#667788' }, grid: { color: '#1a2332' } }
+      }
+    }
+  });
+}
+
+function switchChart(type) {
+  currentChart = type;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const actual = DATA.filter(d => d.has_actual);
+  const labels = actual.map(d => d.date.slice(5));
+  if (type === 'close') {
+    chart.data.datasets = [{ label:'收盘价', data:actual.map(d=>d.close), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.1, pointRadius:0, borderWidth:2 }];
+  } else if (type === 'chg') {
+    chart.data.datasets = [{ label:'每日涨跌幅(%)', data:actual.map(d=>d.close_chg), backgroundColor:actual.map(d=>d.close_chg>=0?'rgba(239,68,68,0.5)':'rgba(34,197,94,0.5)'), borderWidth:0, type:'bar' }];
+  } else if (type === 'volume') {
+    chart.data.datasets = [{ label:'成交量(亿)', data:actual.map(d=>(d.volume/1e8).toFixed(2)), borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.2)', fill:true, tension:0.1, pointRadius:0, borderWidth:2 }];
+  }
+  chart.update();
+}
+
+function renderComparison() {
+  const actual = DATA.filter(d => d.has_actual);
+  const groups = {};
+  actual.forEach(d => {
+    if (!groups[d.mz_trend]) groups[d.mz_trend] = [];
+    groups[d.mz_trend].push(d);
+  });
+  const sorted = Object.entries(groups).sort((a,b) => {
+    const upA = a[1].filter(d => d.close_chg > 0).length / a[1].length;
+    const upB = b[1].filter(d => d.close_chg > 0).length / b[1].length;
+    return upB - upA;
+  });
+  document.getElementById('compGrid').innerHTML = sorted.map(([trend, items]) => {
+    const up = items.filter(d => d.close_chg > 0).length;
+    const down = items.filter(d => d.close_chg < 0).length;
+    const upPct = (up / items.length * 100).toFixed(0);
+    const cls = getTrendClass(trend);
+    return `<div class="comp-card">
+      <div class="trend-name ${cls}">${trend}</div>
+      <div class="trend-meta">${items.length}天 · 涨${up}/跌${down} · 上涨率${upPct}%</div>
+      <div class="bar-wrap">
+        <div class="bar"><div style="width:${upPct}%;background:linear-gradient(90deg,#ef4444,#f87171);height:100%;border-radius:3px"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTable(data) {
+  document.getElementById('tableBody').innerHTML = data.map(d => {
+    const isForecast = !d.has_actual;
+    const chgCls = d.close_chg === null ? '' : (d.close_chg > 0 ? 'chg-up' : d.close_chg < 0 ? 'chg-down' : 'chg-flat');
+    const intraCls = d.intraday_chg === null ? '' : (d.intraday_chg > 0 ? 'chg-up' : d.intraday_chg < 0 ? 'chg-down' : 'chg-flat');
+    const trendCls = getTrendClass(d.mz_trend);
+    const upRate = TREND_UPRATE[d.mz_trend];
+    const upRateText = upRate !== undefined ? upRate + '%' : '—';
+    const upRateColor = upRate >= 50 ? '#ef4444' : '#22c55e';
+    return `<tr class="${isForecast?'forecast-row':''}">
+      <td>${d.date}${isForecast?'<span class="forecast-mark">预测</span>':''}</td>
+      <td>${d.weekday}</td>
+      <td><span class="pillar">${d.month_pillar}</span></td>
+      <td><span class="pillar">${d.day_pillar}</span></td>
+      <td>${d.open !== null ? d.open.toFixed(2) : '—'}</td>
+      <td><strong>${d.close !== null ? d.close.toFixed(2) : '—'}</strong></td>
+      <td class="${chgCls}">${d.close_chg !== null ? (d.close_chg>=0?'+':'')+d.close_chg+'%' : '—'}</td>
+      <td class="${intraCls}">${d.intraday_chg !== null ? (d.intraday_chg>=0?'+':'')+d.intraday_chg+'%' : '—'}</td>
+      <td>${d.amplitude !== null ? d.amplitude+'%' : '—'}</td>
+      <td>${d.mz_combo}</td>
+      <td><span class="mz-trend-tag ${trendCls}">${d.mz_trend}</span></td>
+      <td style="font-weight:600;color:${upRateColor}">${upRateText}</td>
+      <td class="detail" title="${d.mz_detail}">${d.mz_detail}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('rowCount').textContent = `显示 ${data.length} / ${DATA.length} 条`;
+}
+
+function filterTable() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const trend = document.getElementById('trendFilter').value;
+  const chg = document.getElementById('chgFilter').value;
+  let filtered = DATA.filter(d => {
+    if (search && !(d.date.includes(search) || d.day_pillar.includes(search) || d.month_pillar.includes(search) || d.mz_trend.includes(search) || d.mz_detail.includes(search))) return false;
+    if (trend && d.mz_trend !== trend) return false;
+    if (chg === 'actual' && !d.has_actual) return false;
+    if (chg === 'forecast' && d.has_actual) return false;
+    if (chg === 'up' && (!d.has_actual || d.close_chg <= 0)) return false;
+    if (chg === 'down' && (!d.has_actual || d.close_chg >= 0)) return false;
+    return true;
+  });
+  if (sortCol >= 0) filtered = doSort(filtered);
+  renderTable(filtered);
+}
+
+function doSort(data) {
+  const keys = ['date','weekday','month_pillar','day_pillar','open','close','close_chg','intraday_chg','amplitude','mz_combo','mz_trend','upRate'];
+  const key = keys[sortCol];
+  return [...data].sort((a,b) => {
+    let va, vb;
+    if (key === 'upRate') {
+      va = TREND_UPRATE[a.mz_trend] || 0;
+      vb = TREND_UPRATE[b.mz_trend] || 0;
+    } else {
+      va = a[key]; vb = b[key];
+    }
+    if (va === null || va === undefined) return 1;
+    if (vb === null || vb === undefined) return -1;
+    if (typeof va === 'string') return sortAsc ? va.localeCompare(vb,'zh') : vb.localeCompare(va,'zh');
+    return sortAsc ? va - vb : vb - va;
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  filterTable();
+}
+
+function initFilters() {
+  const trends = [...new Set(DATA.map(d => d.mz_trend))].sort();
+  const sel = document.getElementById('trendFilter');
+  trends.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    sel.appendChild(opt);
+  });
+}
+
+renderDJ1966();
+renderForecast();
+renderStats();
+initChart();
+initFilters();
+renderComparison();
+filterTable();
+</script>
+</body>
+</html>
