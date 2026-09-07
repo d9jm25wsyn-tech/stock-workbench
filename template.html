@@ -59,6 +59,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC"
 .filters input, .filters select { background:#0f1419; border:1px solid #2a3441; border-radius:6px; padding:8px 12px; color:#e0e0e0; font-size:13px; outline:none; }
 .filters input:focus, .filters select:focus { border-color:#3b82f6; }
 .filters .count { font-size:12px; color:#667788; margin-left:auto; }
+.filters .toggle-btn { background:#3b82f6; color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:12px; cursor:pointer; transition:all .2s; }
+.filters .toggle-btn.inactive { background:#0f1419; color:#8899aa; border:1px solid #2a3441; }
+.filters .toggle-btn:hover { opacity:0.9; }
+.today-row { background:rgba(59,130,246,0.15) !important; border-left:3px solid #3b82f6; }
+.today-row td:first-child { font-weight:700; color:#3b82f6; }
 .filters .badge { font-size:11px; padding:3px 10px; border-radius:10px; }
 .badge-actual { background:rgba(34,197,94,0.15); color:#22c55e; }
 .badge-forecast { background:rgba(59,130,246,0.15); color:#3b82f6; }
@@ -128,14 +133,10 @@ tbody tr.forecast-row td { color:#8899bb; }
     <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
   </div>
 
-  <div class="comparison-section">
-    <h2>预测走势与实际涨跌对照（基于实际行情）</h2>
-    <div id="compGrid" class="comp-grid"></div>
-  </div>
-
   <div class="table-section">
     <h2>第三层 · 每日明细数据</h2>
     <div class="filters">
+      <button id="backToToday" class="toggle-btn" onclick="scrollToToday()">回到今天</button>
       <input type="text" id="searchInput" placeholder="搜索日期 / 干支 / 走势..." oninput="filterTable()">
       <select id="trendFilter" onchange="filterTable()">
         <option value="">全部走势</option>
@@ -334,16 +335,19 @@ function renderComparison() {
 }
 
 function renderTable(data) {
+  const today = getTodayStr();
   document.getElementById('tableBody').innerHTML = data.map(d => {
     const isForecast = !d.has_actual;
+    const isToday = d.date === today;
     const chgCls = d.close_chg === null ? '' : (d.close_chg > 0 ? 'chg-up' : d.close_chg < 0 ? 'chg-down' : 'chg-flat');
     const intraCls = d.intraday_chg === null ? '' : (d.intraday_chg > 0 ? 'chg-up' : d.intraday_chg < 0 ? 'chg-down' : 'chg-flat');
     const trendCls = getTrendClass(d.mz_trend);
     const upRate = TREND_UPRATE[d.mz_trend];
     const upRateText = upRate !== undefined ? upRate + '%' : '—';
     const upRateColor = upRate >= 50 ? '#ef4444' : '#22c55e';
-    return `<tr class="${isForecast?'forecast-row':''}">
-      <td>${d.date}${isForecast?'<span class="forecast-mark">预测</span>':''}</td>
+    const rowCls = (isForecast?'forecast-row':'') + (isToday?' today-row':'');
+    return `<tr class="${rowCls}">
+      <td>${d.date}${isToday?' <span style="font-size:10px;color:#3b82f6;background:rgba(59,130,246,0.15);padding:1px 6px;border-radius:8px">今天</span>':''}${isForecast?'<span class="forecast-mark">预测</span>':''}</td>
       <td>${d.weekday}</td>
       <td><span class="pillar">${d.month_pillar}</span></td>
       <td><span class="pillar">${d.day_pillar}</span></td>
@@ -359,6 +363,21 @@ function renderTable(data) {
     </tr>`;
   }).join('');
   document.getElementById('rowCount').textContent = `显示 ${data.length} / ${DATA.length} 条`;
+}
+
+function getTodayStr() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function scrollToToday() {
+  const todayRow = document.querySelector('.today-row');
+  if (todayRow) {
+    todayRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 function filterTable() {
@@ -417,8 +436,9 @@ renderForecast();
 renderStats();
 initChart();
 initFilters();
-renderComparison();
 filterTable();
+// 页面加载后自动滚动到今天
+setTimeout(scrollToToday, 300);
 </script>
 </body>
 </html>
